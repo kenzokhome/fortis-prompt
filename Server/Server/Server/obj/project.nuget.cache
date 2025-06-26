@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "bLk/BLOMiuM=",
+  "success": true,
+  "projectFilePath": "D:\\Useful\\Fortis\\fortis-prompt\\Server\\Server\\Server\\Server.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\pauls\\.nuget\\packages\\litenetlib\\1.3.1\\litenetlib.1.3.1.nupkg.sha512"
+  ],
+  "logs": []
+}
