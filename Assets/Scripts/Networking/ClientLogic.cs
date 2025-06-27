@@ -285,11 +285,11 @@ namespace Fortis.LAN
                 if (!roomManager._players.TryGetValue(_cachedProjectileSpawnPacket.OwnerId, out var handler))
                     return;
                 var sp = new ServerProjectile(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction);
-                ServerProjectileView spw = (ServerProjectileView)(gameManager.HandleShoot(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
+                ServerProjectileView spw = (ServerProjectileView)(gameManager.SpawnObject(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
 
                 sp.id = _cachedProjectileSpawnPacket.ProjectileId;
                 sp.ownerId = _cachedProjectileSpawnPacket.OwnerId;
-                spw.Setup(sp);
+                spw.Setup(sp, gameManager);
                 handler.Player.projectiles.Add(sp);
             }
             else
@@ -297,11 +297,11 @@ namespace Fortis.LAN
                 if (!roomManager.bots.TryGetValue(_cachedProjectileSpawnPacket.OwnerId, out var handler))
                     return;
                 var sp = new ServerProjectile(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction);
-                ServerProjectileView spw = (ServerProjectileView)(gameManager.HandleShoot(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
+                ServerProjectileView spw = (ServerProjectileView)(gameManager.SpawnObject(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
 
                 sp.id = _cachedProjectileSpawnPacket.ProjectileId;
                 sp.ownerId = _cachedProjectileSpawnPacket.OwnerId;
-                spw.Setup(sp);
+                spw.Setup(sp, gameManager);
                 handler.Player.projectiles.Add(sp);
             }
         }

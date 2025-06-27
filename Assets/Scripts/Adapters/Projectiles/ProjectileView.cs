@@ -6,11 +6,12 @@ namespace Adapters.Projectiles
     public class ProjectileView : MonoBehaviour
     {
         public IProjectile _projectile;
-
-        public virtual void Setup(IProjectile player)
+        protected GameManager _gameManager;
+        public virtual void Setup(IProjectile player, GameManager gameManager)
         {
+            _gameManager = gameManager;
             _projectile = player;
-            _projectile.OnExpire += () => Destroy(gameObject);
+            _projectile.OnExpire += () => _gameManager.DisableBullet(this);//Destroy(gameObject);
             enabled = true;
         }
 

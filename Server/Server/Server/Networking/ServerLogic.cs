@@ -16,6 +16,7 @@ namespace Server.Networking
         Stop,
         Start
     }
+
     public class ServerLogic : INetEventListener
     {
         private NetManager netManager;

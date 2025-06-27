@@ -361,6 +361,37 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &602842782
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 602842783}
+  m_Layer: 0
+  m_Name: BulletPoolHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &602842783
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602842782}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 100, y: 100, z: 100}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 10
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -485,7 +516,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inputListener: {fileID: 536757951}
-  OurPlayerId: 0
+  warmEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  prefab: {fileID: 0}
+  root: {fileID: 602842783}
+  poolSize: 50
+  instantiatedList: []
 --- !u!4 &731206975
 Transform:
   m_ObjectHideFlags: 0
@@ -899,7 +936,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c5cff1fdc3120644b55a799dfb28df3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentSession: 0
   _debugText: {fileID: 2006728711}
   gameManager: {fileID: 731206974}
   serverAddress: 
@@ -1165,7 +1201,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 52, y: -50.535706}
+  m_AnchoredPosition: {x: 52, y: -50.535645}
   m_SizeDelta: {x: 483.1426, y: 164.6427}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2006728711

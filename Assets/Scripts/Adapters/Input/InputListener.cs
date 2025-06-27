@@ -10,10 +10,14 @@ namespace Adapters.Input
 
         public Vector2 Movement { get; private set; }
 
-        private void Update ()
+        public float fireRate = 0.5f;
+        private float lastFireTime = 0f;
+
+        private void Update()
         {
-            if (UnityEngine.Input.GetKeyUp(KeyCode.Space))
+            if (UnityEngine.Input.GetKey(KeyCode.Space) && Time.time >= lastFireTime + fireRate)
             {
+                lastFireTime = Time.time;
                 OnShoot?.Invoke();
             }
 
