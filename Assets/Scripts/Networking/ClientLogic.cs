@@ -26,10 +26,7 @@ namespace Fortis.LAN
 
     public class ClientLogic : Singleton<ClientLogic>, INetEventListener
     {
-        public Session currentSession = Session.Stop;
-
-        private Dictionary<int, PlayerHandler> _players;
-        private Dictionary<int, PlayerHandler> bots;
+        public RoomManager roomManager;
         [SerializeField] private Text _debugText;
         public GameManager gameManager;
         private LanManager lanManager;
@@ -47,16 +44,12 @@ namespace Fortis.LAN
         private NetPeer _server;
         private float _ping;
 
-        public ClientPlayer clientPlayer;
-
-        public List<RemotePlayer> remotePlayers;
-
         public static LogicTimer LogicTimer { get; private set; }
         // Start is called before the first frame update
 
         public IEnumerator Start()
         {
-            lanManager = new LanManager(serverPort: 1025, clientPort: 1024, debug: true);
+            lanManager = new LanManager(serverPort: 1025, clientPort: 1024, debug: false);
             lanManager.ScanHost();
             lanManager.StartClient();
 
@@ -75,6 +68,11 @@ namespace Fortis.LAN
             serverAddress = lanManager.address;
 
             UIController.instance.EnableConnectionPanel();
+            UIController.instance.readyButton.onClick.AddListener(() =>
+            {
+                SendPlayerReady();
+            });
+
             lanManager.CloseClient();
 
             _cachedServerState = new ServerState();
@@ -83,10 +81,9 @@ namespace Fortis.LAN
 
             _userName = Environment.MachineName + " " + r.Next(100000);
             LogicTimer = new LogicTimer(OnLogicUpdate);
-            remotePlayers = new List<RemotePlayer>();
             _writer = new NetDataWriter();
-            _players = new Dictionary<int, PlayerHandler>();
-            bots = new Dictionary<int, PlayerHandler>();
+            roomManager = new RoomManager(this);
+
             _packetProcessor = new NetPacketProcessor();
             _packetProcessor.RegisterNestedType((w, v) => w.PutV2(v), reader => reader.GetVector2());
             _packetProcessor.RegisterNestedType((w, v) => w.PutV3(v), reader => reader.GetVector3());
@@ -140,7 +137,8 @@ namespace Fortis.LAN
 
         private void OnDestroy()
         {
-            _netManager.Stop();
+            if (_netManager != null)
+                _netManager.Stop();
         }
 
         void Update()
@@ -151,11 +149,11 @@ namespace Fortis.LAN
             LogicTimer.Update();
             if (_debugText != null)
             {
-                if (clientPlayer != null)
+                if (roomManager.clientPlayer != null)
                     _debugText.text =
                         string.Format(
                             $"LastServerTick: {_lastServerTick}\n" +
-                            $"StoredCommands: {clientPlayer.StoredCommands}\n" +
+                            $"StoredCommands: {roomManager.clientPlayer.StoredCommands}\n" +
                             $"Ping: {_ping}");
                 else
                     _debugText.text = "Disconnected";
@@ -164,7 +162,7 @@ namespace Fortis.LAN
 
         private void OnLogicUpdate()
         {
-            foreach (var kv in _players)
+            foreach (var kv in roomManager._players)
             {
                 kv.Value.Player.Update(LogicTimer.FixedDelta);
             }
@@ -173,38 +171,23 @@ namespace Fortis.LAN
         private void OnPlayerJoined(PlayerJoinedPacket packet)
         {
             Debug.Log($"[C] Player joined: {packet.UserName} " + packet.Id);
-            if (_players.ContainsKey(packet.Id))
+            if (roomManager._players.ContainsKey(packet.Id))
                 return;
             var remotePlayer = new RemotePlayer(packet, packet.Id, packet.UserName);
-            remotePlayers.Add(remotePlayer);
             PlayerView view = gameManager.SpawnPlayer(packet.Id, packet.Position);
             view.transform.position = packet.Position;
             remotePlayer.Position = packet.Position;
             remotePlayer._health = packet.Health;
             ((RemotePlayerView)view).Setup(remotePlayer);
-            _players.Add(remotePlayer.Id, new PlayerHandler(remotePlayer, view));
+            roomManager._players.Add(remotePlayer.Id, new PlayerHandler(remotePlayer, view));
         }
 
         private void OnPlayerLeaved(PlayerLeavedPacket packet)
         {
-            RemotePlayer playerFound = null;
-            foreach (var player in remotePlayers)
+            Debug.Log($"[C] Player leaved: {packet.Id}");
+            if (roomManager._players.TryGetValue(packet.Id, out var handler))
             {
-                if (player.Id == packet.Id)
-                {
-                    playerFound = player;
-                    break;
-                }
-            }
-            if (playerFound != null)
-            {
-                Debug.Log($"[C] Player leaved: {playerFound.Name}");
-                remotePlayers.Remove(playerFound);
-            }
-
-            if (_players.TryGetValue(packet.Id, out var handler))
-            {
-                _players.Remove(packet.Id);
+                roomManager._players.Remove(packet.Id);
                 Destroy(handler.View.gameObject);
             }
         }
@@ -213,16 +196,14 @@ namespace Fortis.LAN
         {
             Debug.Log("[C] Join accept. Received player id: " + packet.Id);
             _lastServerTick = packet.ServerTick;
-            var clientPlayer = new Core.Player.ClientPlayer(this, packet.Id, gameManager._inputListener, _userName);
-            this.clientPlayer = clientPlayer;
-            gameManager.OurPlayerId = packet.Id;
-            ClientPlayerView view = (ClientPlayerView)gameManager.SpawnPlayer(packet.Id, packet.Position, true);
-            view.Setup(clientPlayer);
-            Debug.Log(packet.Position);
-            view.transform.position = packet.Position;
+            var clientPlayer = new ClientPlayer(this, packet.Id, gameManager._inputListener, _userName);
             clientPlayer.Position = packet.Position;
+            ClientPlayerView view = (ClientPlayerView)gameManager.SpawnPlayer(packet.Id, packet.Position, true);
             clientPlayer.transform = view.transform;
-            _players.Add(clientPlayer.Id, new PlayerHandler(clientPlayer, view));
+            view.Setup(roomManager.clientPlayer);
+
+            roomManager.clientPlayer = clientPlayer;
+            roomManager._players.Add(roomManager.clientPlayer.Id, new PlayerHandler(roomManager.clientPlayer, view));
         }
 
         private void OnServerState()
@@ -236,13 +217,13 @@ namespace Fortis.LAN
 
         private void OnSessionStart(SessionStartPacket packet)
         {
-            currentSession = Session.Start;
+            roomManager.currentSession = Session.Start;
             UIController.instance.DisableErrorAndConnectionPanel();
         }
 
         private void OnPlayerReset(PlayerResetPacket playerResetPacket)
         {
-            if (!_players.TryGetValue(playerResetPacket.Id, out var handler))
+            if (!roomManager._players.TryGetValue(playerResetPacket.Id, out var handler))
                 return;
             handler.Player._health = 100;
             handler.Player.isDead = false;
@@ -253,7 +234,7 @@ namespace Fortis.LAN
         {
             if (packet.isBot == false)
             {
-                if (!_players.TryGetValue(packet.PlayerId, out var handler))
+                if (!roomManager._players.TryGetValue(packet.PlayerId, out var handler))
                     return;
                 handler.Player._health = packet.Health;
                 if (handler.Player._health <= 0)
@@ -262,11 +243,15 @@ namespace Fortis.LAN
                     handler.View.SetMaterialToTransparent();
                     UIController.instance.EnableError("You Died");
                     UIController.instance.EnableConnectionResetPanel();
+                    UIController.instance.readyButton.onClick.AddListener(() =>
+                    {
+                        SendPlayerReset();
+                    });
                 }
             }
             else
             {
-                if (!bots.TryGetValue(packet.PlayerId, out var handler))
+                if (!roomManager.bots.TryGetValue(packet.PlayerId, out var handler))
                     return;
                 handler.Player._health = packet.Health;
                 if (handler.Player._health <= 0)
@@ -281,33 +266,33 @@ namespace Fortis.LAN
         {
             if (_cachedProjectileSpawnPacket.isBot == false)
             {
-                if (!_players.TryGetValue(_cachedProjectileSpawnPacket.OwnerId, out var handler))
+                if (!roomManager._players.TryGetValue(_cachedProjectileSpawnPacket.OwnerId, out var handler))
                     return;
-                ServerProjectileView spw = (ServerProjectileView)(gameManager.HandleShoot(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
                 var sp = new ServerProjectile(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction);
-                handler.Player.projectiles.Add(sp);
-                spw.Setup(sp);
-                spw.clientLogic = this;
+                ServerProjectileView spw = (ServerProjectileView)(gameManager.HandleShoot(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
+
                 sp.id = _cachedProjectileSpawnPacket.ProjectileId;
                 sp.ownerId = _cachedProjectileSpawnPacket.OwnerId;
+                spw.Setup(sp);
+                handler.Player.projectiles.Add(sp);
             }
             else
             {
-                if (!bots.TryGetValue(_cachedProjectileSpawnPacket.OwnerId, out var handler))
+                if (!roomManager.bots.TryGetValue(_cachedProjectileSpawnPacket.OwnerId, out var handler))
                     return;
-                ServerProjectileView spw = (ServerProjectileView)(gameManager.HandleShoot(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
                 var sp = new ServerProjectile(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction);
-                handler.Player.projectiles.Add(sp);
-                spw.Setup(sp);
-                spw.clientLogic = this;
+                ServerProjectileView spw = (ServerProjectileView)(gameManager.HandleShoot(_cachedProjectileSpawnPacket.Position, _cachedProjectileSpawnPacket.Direction));
+
                 sp.id = _cachedProjectileSpawnPacket.ProjectileId;
                 sp.ownerId = _cachedProjectileSpawnPacket.OwnerId;
+                spw.Setup(sp);
+                handler.Player.projectiles.Add(sp);
             }
         }
 
         public void OnBotSpawn(BotSpawnPacket packet)
         {
-            if (bots.TryGetValue(packet.Id, out var handler))
+            if (roomManager.bots.TryGetValue(packet.Id, out var handler))
             {
                 handler.Player._health = 100;
                 handler.Player.isDead = false;
@@ -322,7 +307,7 @@ namespace Fortis.LAN
                 var bot1 = new BotPlayer(packet.Id);
                 bot1.Position = packet.Position;
                 ((BotPlayerView)botPlayerView1).Setup(bot1);
-                bots.Add(packet.Id, new PlayerHandler(bot1, botPlayerView1));
+                roomManager.bots.Add(packet.Id, new PlayerHandler(bot1, botPlayerView1));
                 bot1.transform = botPlayerView1.transform;
             }
         }
@@ -332,12 +317,12 @@ namespace Fortis.LAN
             for (int i = 0; i < serverState.PlayerStatesCount; i++)
             {
                 var state = serverState.PlayerStates[i];
-                if (!_players.TryGetValue(state.Id, out var handler))
+                if (!roomManager._players.TryGetValue(state.Id, out var handler))
                     continue;
 
-                if (handler.Player.Id == clientPlayer.Id)
+                if (handler.Player.Id == roomManager.clientPlayer.Id)
                 {
-                    clientPlayer.ReceiveServerState(serverState, state);
+                    roomManager.clientPlayer.ReceiveServerState(serverState, state);
                 }
                 else
                 {
@@ -351,25 +336,27 @@ namespace Fortis.LAN
         {
             if (packet.isBot == false)
             {
-                if (!_players.TryGetValue(packet.OwnerId, out var handler))
+                if (!roomManager._players.TryGetValue(packet.OwnerId, out var handler))
                     return;
                 foreach (var prj in handler.Player.projectiles)
                 {
                     if (prj.id == packet.ProjectileId)
                     {
                         prj.Position = packet.Position;
+                        break;
                     }
                 }
             }
             if (packet.isBot == true)
             {
-                if (!bots.TryGetValue(packet.OwnerId, out var handler))
+                if (!roomManager.bots.TryGetValue(packet.OwnerId, out var handler))
                     return;
                 foreach (var prj in handler.Player.projectiles)
                 {
                     if (prj.id == packet.ProjectileId)
                     {
                         prj.Position = packet.Position;
+                        break;
                     }
                 }
             }
@@ -377,17 +364,17 @@ namespace Fortis.LAN
 
         private void OnBotMovement(BotMovementPacket packet)
         {
-            if (!bots.TryGetValue(packet.botId, out var handler))
+            if (!roomManager.bots.TryGetValue(packet.botId, out var handler))
                 return;
-            bots[packet.botId].Player.Position = packet.Position;
-            bots[packet.botId].Player.Rotation = packet.Rotation;
+            roomManager.bots[packet.botId].Player.Position = packet.Position;
+            roomManager.bots[packet.botId].Player.Rotation = packet.Rotation;
         }
 
         private void OnProjectileDestroy(ProjectileDestroyPacket packet)
         {
             if (packet.isBot == false)
             {
-                if (!_players.TryGetValue(packet.OwnerId, out var handler))
+                if (!roomManager._players.TryGetValue(packet.OwnerId, out var handler))
                     return;
                 ServerProjectile sp = null;
                 foreach (var prj in handler.Player.projectiles)
@@ -403,7 +390,7 @@ namespace Fortis.LAN
             }
             else
             {
-                if (!bots.TryGetValue(packet.OwnerId, out var handler))
+                if (!roomManager.bots.TryGetValue(packet.OwnerId, out var handler))
                     return;
                 ServerProjectile sp = null;
                 foreach (var prj in handler.Player.projectiles)
@@ -421,14 +408,14 @@ namespace Fortis.LAN
 
         public void TryShoot(ClientPlayer clientPlayer)
         {
-            if (currentSession == Session.Stop) return;
-            if (clientPlayer.isDead) return;
+            if (roomManager.currentSession == Session.Stop) return;
+            if (roomManager.clientPlayer.isDead) return;
 
             var shootPacket = new ShootPacket
             {
-                Origin = clientPlayer.transform.position,
-                Direction = clientPlayer.transform.forward,
-                FromPlayerId = clientPlayer.Id
+                Origin = roomManager.clientPlayer.transform.position,
+                Direction = roomManager.clientPlayer.transform.forward,
+                FromPlayerId = roomManager.clientPlayer.Id
             };
 
             SendPacketSerializable(PacketType.Shoot, shootPacket, DeliveryMethod.Unreliable);
@@ -445,11 +432,10 @@ namespace Fortis.LAN
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            if (!_players.TryGetValue(peer.Id, out var handler))
+            if (!roomManager._players.TryGetValue(peer.Id, out var handler))
                 return;
-            _players.Clear();
-            //_playerManager.Clear();
-            clientPlayer = null;
+            roomManager._players.Clear();
+            roomManager.clientPlayer = null;
             _server = null;
             LogicTimer.Stop();
             Debug.Log("[C] Disconnected from server: " + disconnectInfo.Reason);
@@ -521,12 +507,12 @@ namespace Fortis.LAN
 
         public void SendPlayerReady()
         {
-            SendPacket(new PlayerReadyPacket { Id = clientPlayer.Id, IsReady = true }, DeliveryMethod.ReliableOrdered);
+            SendPacket(new PlayerReadyPacket { Id = roomManager.clientPlayer.Id, IsReady = true }, DeliveryMethod.ReliableOrdered);
         }
 
         public void SendPlayerReset()
         {
-            SendPacket(new PlayerResetPacket { Id = clientPlayer.Id }, DeliveryMethod.ReliableOrdered);
+            SendPacket(new PlayerResetPacket { Id = roomManager.clientPlayer.Id }, DeliveryMethod.ReliableOrdered);
         }
 
         public void SendPacketSerializable<T>(PacketType type, T packet, DeliveryMethod deliveryMethod) where T : INetSerializable

@@ -1,9 +1,13 @@
 {
-    "name": "Adapters",
+    "name": "Fortis.Networking",
     "rootNamespace": "",
     "references": [
+        "GUID:6723a1b7033d00f418411a6755d423a1",
+        "GUID:74bffa6ed836a460781107f5f9e25598",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
         "GUID:f85e4fd8f46474b15ace7d824c89b3d8",
-        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+        "GUID:b0a833da982febc4c841d4d31656b92c",
+        "GUID:5ad17efb580930a4e993ad4ba27053cc"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

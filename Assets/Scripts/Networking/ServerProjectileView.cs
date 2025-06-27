@@ -8,7 +8,7 @@ namespace Fortis.LAN
 {
     public class ServerProjectileView : ProjectileView
     {
-        public ClientLogic clientLogic;
+       
         public override void Setup(IProjectile player)
         {
             _projectile = player;

@@ -1,4 +1,3 @@
-using Fortis.LAN;
 using Fortis.Utils;
 using System.Collections;
 using System.Collections.Generic;
@@ -45,7 +44,6 @@ namespace Fortis.UI
             readyButton.onClick.RemoveAllListeners();
             readyButton.onClick.AddListener(() => {
                 readyButton.gameObject.SetActive(false);
-                ClientLogic.instance.SendPlayerReady();
                 errorText.text = "Please wait for all users to be ready";
                 errorText.gameObject.SetActive(true);
             });
@@ -58,7 +56,6 @@ namespace Fortis.UI
             readyButton.onClick.RemoveAllListeners();
             readyButton.onClick.AddListener(() => {
                 readyButton.gameObject.SetActive(false);
-                ClientLogic.instance.SendPlayerReset();
                 DisableErrorAndConnectionPanel();
             });
         }

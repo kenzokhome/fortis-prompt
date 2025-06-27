@@ -11,10 +11,10 @@ namespace Core.Projectiles
         public int ownerId;
 
         private const float MovementSpeed = 8f;
-        protected const float Duration = 4f;
+        //protected const float Duration = 4f;
 
         protected Vector3 _direction;
-        protected float endTime;
+        //protected float endTime;
 
         public Vector3 Position { get; set; }
         public bool Expired { get; set; }
@@ -23,7 +23,7 @@ namespace Core.Projectiles
         {
             Position = initialPosition;
             _direction = direction.normalized;
-            endTime = Time.fixedTime + Duration;
+            //endTime = Time.fixedTime + Duration;
         }
 
         public void Tick()

@@ -35,7 +35,7 @@ namespace Fortis.LAN
         private bool debug = false;
 
 
-        public LanManager(int serverPort, int clientPort, bool debug = true)
+        public LanManager(int serverPort, int clientPort, bool debug = false)
         {
             address = "";
             this.serverPort = serverPort;

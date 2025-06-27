@@ -11,6 +11,7 @@ namespace Fortis.LAN
         public override void Setup(IPlayer player)
         {
             base.Setup(player);
+            transform.position = player.Position;
         }
 
         protected override void Update()

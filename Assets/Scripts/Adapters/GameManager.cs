@@ -13,7 +13,6 @@ namespace Adapters
     {
         [SerializeField] public InputListener _inputListener;
         ///private Player _player;
-        public int OurPlayerId;
         //private List<Player> _players = new();
         //private List<IProjectile> _projectiles = new();
 
