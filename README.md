@@ -52,5 +52,5 @@ The project currently supports:
 - Move from localhost-only play to full LAN/Internet support.
 - Add matchmaking or IP-based lobby system.
 
-### 7. 📡 Automatic Server Discovery
+### 7. Automatic Server Discovery
 - Auto-connect to the first available server, with fallback UI for manual input if none is found.
