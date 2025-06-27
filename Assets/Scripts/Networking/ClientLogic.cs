@@ -189,6 +189,11 @@ namespace Fortis.LAN
             if (roomManager._players.TryGetValue(packet.Id, out var handler))
             {
                 roomManager._players.Remove(packet.Id);
+                foreach (var prj in handler.Player.projectiles)
+                {
+                    ServerProjectile sp = (ServerProjectile)prj;
+                    sp.Tick();
+                }
                 Destroy(handler.View.gameObject);
             }
         }
