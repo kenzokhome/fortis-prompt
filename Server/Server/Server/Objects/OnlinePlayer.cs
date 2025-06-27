@@ -1,14 +1,10 @@
 ﻿using LiteNetLib;
 using Logic.Packets;
 using Server.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Server.Core;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Server
+namespace Server.Players
 {
     public class OnlinePlayer : Player
     {

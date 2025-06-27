@@ -1,14 +1,9 @@
 ﻿using LiteNetLib;
 using Logic.Packets;
 using Server.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Server
+namespace Server.Core
 {
     public class Projectile
     {

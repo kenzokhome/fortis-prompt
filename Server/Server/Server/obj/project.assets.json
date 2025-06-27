@@ -56,11 +56,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Useful\\Fortis\\fortis-prompt\\Server\\Server\\Server\\Server.csproj",
+      "projectUniqueName": "F:\\Git\\fortis-prompt\\Server\\Server\\Server\\Server.csproj",
       "projectName": "Server",
-      "projectPath": "D:\\Useful\\Fortis\\fortis-prompt\\Server\\Server\\Server\\Server.csproj",
+      "projectPath": "F:\\Git\\fortis-prompt\\Server\\Server\\Server\\Server.csproj",
       "packagesPath": "C:\\Users\\pauls\\.nuget\\packages\\",
-      "outputPath": "D:\\Useful\\Fortis\\fortis-prompt\\Server\\Server\\Server\\obj\\",
+      "outputPath": "F:\\Git\\fortis-prompt\\Server\\Server\\Server\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "D:\\Program Files\\Visual Studio\\Shared\\NuGetPackages"

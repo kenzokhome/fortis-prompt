@@ -1,14 +1,9 @@
 ﻿using Logic.Packets;
-using Server.Networking;
 using Server.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+using Server.Core;
 
-namespace Server
+namespace Server.Players
 {
     public class BotPlayer : Player
     {

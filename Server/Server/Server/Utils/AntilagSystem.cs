@@ -1,8 +1,7 @@
-﻿using Logic.Packets;
-using System;
-using System.Numerics;
+﻿using System.Numerics;
+using Server.Players;
 
-namespace Server
+namespace Server.Utils
 {
     public struct StateInfo
     {
