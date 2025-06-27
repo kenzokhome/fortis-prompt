@@ -75,6 +75,7 @@ namespace Adapters
         {
             Projectile projectile = new Projectile(position, direction);
             GameObject go = PoolManager.SpawnObject(prefab, position, Quaternion.identity, null);
+            go.transform.parent = null;
             ProjectileView pv = go.GetComponent<ProjectileView>();
             if(!localUsedPool.TryGetValue(go, out var handler))
             {
