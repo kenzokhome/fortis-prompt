@@ -49,6 +49,7 @@ namespace Fortis.LAN
 
         public IEnumerator Start()
         {
+            serverAddress = "";
             lanManager = new LanManager(serverPort: 1025, clientPort: 1024, debug: false);
             lanManager.ScanHost();
             lanManager.StartClient();
@@ -200,7 +201,7 @@ namespace Fortis.LAN
             clientPlayer.Position = packet.Position;
             ClientPlayerView view = (ClientPlayerView)gameManager.SpawnPlayer(packet.Id, packet.Position, true);
             clientPlayer.transform = view.transform;
-            view.Setup(roomManager.clientPlayer);
+            view.Setup(clientPlayer);
 
             roomManager.clientPlayer = clientPlayer;
             roomManager._players.Add(roomManager.clientPlayer.Id, new PlayerHandler(roomManager.clientPlayer, view));
@@ -218,6 +219,13 @@ namespace Fortis.LAN
         private void OnSessionStart(SessionStartPacket packet)
         {
             roomManager.currentSession = Session.Start;
+            if (roomManager.clientPlayer.isDead)
+            {
+                if (roomManager._players.TryGetValue(roomManager.clientPlayer.Id, out var handler))
+                {
+                    SendPlayerReset();
+                }
+            }
             UIController.instance.DisableErrorAndConnectionPanel();
         }
 
@@ -241,12 +249,15 @@ namespace Fortis.LAN
                 {
                     handler.Player.isDead = true;
                     handler.View.SetMaterialToTransparent();
-                    UIController.instance.EnableError("You Died");
-                    UIController.instance.EnableConnectionResetPanel();
-                    UIController.instance.readyButton.onClick.AddListener(() =>
+                    if (handler.Player.Id == roomManager.clientPlayer.Id)
                     {
-                        SendPlayerReset();
-                    });
+                        UIController.instance.EnableError("You Died");
+                        UIController.instance.EnableConnectionResetPanel();
+                        UIController.instance.readyButton.onClick.AddListener(() =>
+                        {
+                            SendPlayerReset();
+                        });
+                    }
                 }
             }
             else
@@ -432,6 +443,10 @@ namespace Fortis.LAN
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
+            if (peer == _server)
+            {
+                HandleServerDisconnect();
+            }
             if (!roomManager._players.TryGetValue(peer.Id, out var handler))
                 return;
             roomManager._players.Clear();
@@ -444,6 +459,33 @@ namespace Fortis.LAN
                 _onDisconnected(disconnectInfo);
                 _onDisconnected = null;
             }
+        }
+
+        private void HandleServerDisconnect()
+        {
+            foreach (var player in roomManager._players)
+            {
+                Destroy(player.Value.View.gameObject);
+                foreach (var prj in player.Value.Player.projectiles)
+                {
+                    ServerProjectile sp = (ServerProjectile)prj;
+                    sp.Tick();
+                }
+            }
+            foreach (var bot in roomManager.bots)
+            {
+                Destroy(bot.Value.View.gameObject);
+                foreach (var prj in bot.Value.Player.projectiles)
+                {
+                    ServerProjectile sp = (ServerProjectile)prj;
+                    sp.Tick();
+                }
+            }
+            roomManager._players.Clear();
+            roomManager.clientPlayer = null;
+            _server = null;
+            roomManager.bots.Clear();
+            StartCoroutine(Start());
         }
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)

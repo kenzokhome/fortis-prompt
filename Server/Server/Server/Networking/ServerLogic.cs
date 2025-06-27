@@ -251,6 +251,22 @@ namespace Server.Networking
                     peer.Send(WritePacket(pj), DeliveryMethod.ReliableOrdered);
                 }
             }
+
+
+            if (currentSession == Session.Start)
+            {
+                foreach (var bot in roomManager._bots)
+                {
+                    var botSpawn = new BotSpawnPacket
+                    {
+                        Id = bot.id,
+                        Position = bot._position
+                    };
+                    peer.Send(WritePacket(botSpawn), DeliveryMethod.ReliableOrdered);
+                }
+
+                netManager.SendToAll(WritePacket(new SessionStartPacket { }), DeliveryMethod.ReliableOrdered);
+            }
         }
 
         private void OnPlayerReady(PlayerReadyPacket playerReadyPacket, NetPeer peer)

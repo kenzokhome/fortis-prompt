@@ -28,7 +28,6 @@ namespace Core.Projectiles
 
         public void Tick()
         {
-            Debug.Log("Triggered to destroy");
             //if (Time.fixedTime > endTime)
             //{
                 Expired = true;
